@@ -12,8 +12,26 @@
   <link rel="manifest" href="manifest.json">
   
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #080c14; }
-    iframe { border: none; width: 100%; height: 100%; }
+    body, html { 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden; 
+      background: #080c14; 
+      box-sizing: border-box; /* 確保內縮 padding 不會撐破網頁 */
+    }
+    body {
+      /* 💡 核心優化：自動偵測並避開 iPhone 的動態島、前鏡頭與底部橫條安全區 */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    iframe { 
+      border: none; 
+      width: 100%; 
+      height: 100%; 
+      display: block; /* 避免產生微小間隙 */
+    }
   </style>
 </head>
 <body>
