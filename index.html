@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>動工單導航系統</title>
+  
+  <!-- iOS 獨立 App 設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="動工導航">
+  <link rel="manifest" href="manifest.json">
+  
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #080c14; }
+    iframe { border: none; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <!-- 嵌入原本的 Google Apps Script 網頁程式 -->
+  <iframe id="gas-app" src="https://script.google.com/macros/s/AKfycbxuH2KPTt7pojgRsrKsO83Zb0rn676ObtlIXl84--3Dw4dLib8BDRBS9JcyAIr9ddvj/exec"></iframe>
+
+  <script>
+    const iframe = document.getElementById('gas-app');
+
+    // 監聽來自內層 GAS 的狀態存取訊息，利用穩定的外層網域 localStorage 保存資料
+    window.addEventListener('message', (event) => {
+      if (!event.data) return;
+
+      if (event.data.type === 'SAVE_STATE') {
+        localStorage.setItem(event.data.key, event.data.val);
+      } 
+      else if (event.data.type === 'GET_ALL_STATES') {
+        const states = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          states[key] = localStorage.getItem(key);
+        }
+        // 傳回外層備份的所有狀態給內層 iframe
+        event.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, event.origin);
+      }
+    });
+
+    // 註冊極簡 Service Worker 以支援離線開啟（完全阻斷恐龍畫面）
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+    }
+  </script>
+</body>
+</html>
