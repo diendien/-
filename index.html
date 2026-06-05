@@ -43,14 +43,13 @@
     const iframe = document.getElementById('gas-app');
 
     // 監聽來自內層 GAS 的狀態存取訊息，利用穩定的外層網域 localStorage 保存資料
-   window.addEventListener('message', (event) => {
+  window.addEventListener('message', (event) => {
       if (!event.data) return;
 
       if (event.data.type === 'SAVE_STATE') {
         localStorage.setItem(event.data.key, event.data.val);
       } 
       else if (event.data.type === 'LOGOUT_CLEAR') {
-        // 💡 收到登出訊號時，一併清除 GitHub 的本機暫存，保障帳號安全
         localStorage.clear();
       }
       else if (event.data.type === 'GET_ALL_STATES') {
@@ -61,6 +60,10 @@
         }
         // 傳回外層備份的所有狀態給內層 iframe
         event.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, event.origin);
+      }
+      // 💡 新增優化：穿透 iframe 限制，讓最外層的 GitHub 執行 LINE 跳轉
+      else if (event.data.type === 'NAVIGATE_LINE') {
+        window.location.href = event.data.url;
       }
     });
 
