@@ -64,9 +64,12 @@
       else if (event.data.type === 'NAVIGATE_LINE') {
         window.location.href = event.data.url;
       }
-      // 💡 新增優化：讓最外層的 GitHub 容器執行開啟外部連結（避開 Google 警告與殘留空白視窗）
+      // 💡 iOS PWA 終極解決方案：
+      // 在 iPhone 上如果使用 window.open()，系統會強制彈出帶有「完成」按鈕的內嵌 Safari 視窗。
+      // 如果改用直接修改網址 (window.location.href)，iOS 會判定為「外部連結」，
+      // 從而直接喚醒手機內的 Google Maps App（或原生 Safari），返回時「完全不會」留下任何空白網頁，體驗非常流暢！
       else if (event.data.type === 'OPEN_EXTERNAL_URL') {
-        window.open(event.data.url, '_blank', 'noopener,noreferrer');
+        window.location.href = event.data.url;
       }
     });
 
