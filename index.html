@@ -2,84 +2,56 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>動工單導航系統</title>
-  
-  <!-- iOS 獨立 App 設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="動工導航">
-  <link rel="apple-touch-icon" href="./app-icon.png">
-  <link rel="manifest" href="manifest.json">
-  <!-- Leaflet.js 地圖套件 (完全免費，不需要地圖 API 金鑰) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
   <style>
-    body, html { 
-      margin: 0; 
-      padding: 0; 
-      width: 100%; 
-      height: 100%; 
-      overflow: hidden; 
-      background: #080c14; 
-      box-sizing: border-box; /* 確保內縮 padding 不會撐破網頁 */
-    }
-    body {
-      /* 💡 核心優化：自動偵測並避開 iPhone 的動態島、前鏡頭與底部橫條安全區 */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    iframe { 
-      border: none; 
-      width: 100%; 
-      height: 100%; 
-      display: block; /* 避免產生微小間隙 */
-    }
+    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#080c14; }
+    iframe { border:none; width:100%; height:100%; display:block; }
   </style>
 </head>
 <body>
-  <!-- 嵌入原本的 Google Apps Script 網頁程式 -->
-  <iframe id="gas-app" src="https://script.google.com/macros/s/AKfycbwIAUfbt6emZU-qi4l9gfRkpgPIKSSyyaHz_v9id0pcHYEzXP4fTlgoPJjoKfbrn0I/exec"allow="geolocation"></iframe>
+  <!-- 指向您的 GAS 生產網址 /exec -->
+  <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbzqzmnT1TAiFhNAy1YTdfo2rwHwF7b278RDuwVhmflFASyuwwecLc29C969ORMq1nUj/exec"></iframe>
 
   <script>
-    const iframe = document.getElementById('gas-app');
+    const iframe = document.getElementById('gas-iframe');
 
-     // 監聽來自內層 GAS 的狀態存取訊息，利用穩定的外層網域 localStorage 保存資料
-    window.addEventListener('message', (event) => {
-      if (!event.data) return;
+    // 監聽來自 GAS 內層沙盒的跨網域訊息
+    window.addEventListener('message', function(e) {
+      if (!e.data) return;
 
-      if (event.data.type === 'SAVE_STATE') {
-        localStorage.setItem(event.data.key, event.data.val);
-      } 
-      else if (event.data.type === 'LOGOUT_CLEAR') {
-        localStorage.clear();
+      // 1. 💾 接收並保存本機狀態 (SAVE_STATE)
+      if (e.data.type === 'SAVE_STATE') {
+        localStorage.setItem(e.data.key, e.data.val);
       }
-      else if (event.data.type === 'GET_ALL_STATES') {
+
+      // 2. 🔌 收到讀取要求 (GET_ALL_STATES)，拼裝所有憑證並送回內層
+      if (e.data.type === 'GET_ALL_STATES') {
         const states = {};
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           states[key] = localStorage.getItem(key);
         }
-        // 傳回外層備份的所有狀態給內層 iframe
-        event.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, event.origin);
+        iframe.contentWindow.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
       }
-      else if (event.data.type === 'NAVIGATE_LINE') {
-        window.location.href = event.data.url;
+
+      // 3. 🗺️ 穿透沙盒直開外部 URL (喚醒高德/Apple地圖/LINE)
+      if (e.data.type === 'OPEN_EXTERNAL_URL') {
+        window.location.href = e.data.url;
       }
-      // 💡 iOS PWA 終極解決方案：
-      // 在 iPhone 上如果使用 window.open()，系統會強制彈出帶有「完成」按鈕的內嵌 Safari 視窗。
-      // 如果改用直接修改網址 (window.location.href)，iOS 會判定為「外部連結」，
-      // 從而直接喚醒手機內的 Google Maps App（或原生 Safari），返回時「完全不會」留下任何空白網頁，體驗非常流暢！
-      else if (event.data.type === 'OPEN_EXTERNAL_URL') {
-        window.location.href = event.data.url;
+
+      // 4. 🚀 處理 LINE 跳轉特別管道
+      if (e.data.type === 'NAVIGATE_LINE') {
+        window.location.href = e.data.url;
+      }
+
+      // 5. 🔒 安全登出：清除外層所有保存憑證
+      if (e.data.type === 'LOGOUT_CLEAR') {
+        localStorage.clear();
       }
     });
-
-    // 註冊極簡 Service Worker 以支援離線開啟（完全阻斷恐龍畫面）
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
-    }
   </script>
 </body>
 </html>
