@@ -1,3 +1,4 @@
+<!-- 🔌 diendien.github.io 專用：高相容性 PWA 雙向通訊包裝 index.html -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -12,7 +13,7 @@
   </style>
 </head>
 <body>
-  <!-- 指向您的 GAS 生產網址 /exec -->
+  <!-- 💡 已精準對接您專屬的正式部署網址 /exec -->
   <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbzqzmnT1TAiFhNAy1YTdfo2rwHwF7b278RDuwVhmflFASyuwwecLc29C969ORMq1nUj/exec"></iframe>
 
   <script>
@@ -22,12 +23,12 @@
     window.addEventListener('message', function(e) {
       if (!e.data) return;
 
-      // 1. 💾 接收並保存本機狀態 (SAVE_STATE)
+      // 1. 💾 保存狀態 (SAVE_STATE)
       if (e.data.type === 'SAVE_STATE') {
         localStorage.setItem(e.data.key, e.data.val);
       }
 
-      // 2. 🔌 收到讀取要求 (GET_ALL_STATES)，拼裝所有憑證並送回內層
+      // 2. 🔌 同步還原憑證 (GET_ALL_STATES)
       if (e.data.type === 'GET_ALL_STATES') {
         const states = {};
         for (let i = 0; i < localStorage.length; i++) {
@@ -37,7 +38,7 @@
         iframe.contentWindow.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
       }
 
-      // 3. 🗺️ 穿透沙盒直開外部 URL (喚醒高德/Apple地圖/LINE)
+      // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
       if (e.data.type === 'OPEN_EXTERNAL_URL') {
         window.location.href = e.data.url;
       }
@@ -47,7 +48,7 @@
         window.location.href = e.data.url;
       }
 
-      // 5. 🔒 安全登出：清除外層所有保存憑證
+      // 5. 🔒 安全登出
       if (e.data.type === 'LOGOUT_CLEAR') {
         localStorage.clear();
       }
