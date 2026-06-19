@@ -1,3 +1,4 @@
+<!-- 🔌 diendien.github.io 專用：高相容性 PWA 雙向通訊包裝 index.html -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -7,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- 💡 新增：連結 PWA 設定檔與桌面圖示，解決手機版圖示未更新的問題 -->
+  <!-- 💡 連結 PWA 設定檔與桌面圖示 -->
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./app-icon.png">
   <link rel="icon" type="image/png" href="./app-icon.png">
@@ -45,12 +46,20 @@
 
       // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
       if (e.data.type === 'OPEN_EXTERNAL_URL') {
-        window.location.href = e.data.url;
+        // 💡 關鍵修正：改用虛擬 <a> 標籤 + target="_blank" 來喚醒外部 App 或地圖
+        // 這能確保桌面程式的主視窗永遠停留在 diendien.github.io 作用域內，防止系統因越界而清空登入憑證
+        const link = document.createElement('a');
+        link.href = e.data.url;
+        link.target = '_blank';
+        link.click();
       }
 
       // 4. 🚀 處理 LINE 跳轉特別管道
       if (e.data.type === 'NAVIGATE_LINE') {
-        window.location.href = e.data.url;
+        const link = document.createElement('a');
+        link.href = e.data.url;
+        link.target = '_blank';
+        link.click();
       }
 
       // 5. 🔒 安全登出
@@ -60,7 +69,7 @@
     });
   </script>
 
-  <!-- 💡 新增：註冊 Service Worker 啟用完整的 PWA 模式，維持手機版的登入狀態 -->
+  <!-- 💡 註冊 Service Worker 啟用完整的 PWA 模式 -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
