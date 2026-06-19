@@ -2,6 +2,7 @@
   "name": "動工單導航系統",
   "short_name": "動工導航",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#080c14",
   "theme_color": "#0d1423",
