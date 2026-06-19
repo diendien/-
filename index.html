@@ -25,6 +25,28 @@
   <script>
     const iframe = document.getElementById('gas-iframe');
 
+    // 💡 Cookie 雙重備份工具（防止 iOS ITP 清除 PWA LocalStorage）
+    const CookieUtil = {
+      set: function(name, value, days = 30) {
+        let expires = "";
+        if (days) {
+          let date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/; SameSite=Lax";
+      },
+      get: function(name) {
+        let nameEQ = name + "=";
+        let ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+          let c = ca[i].trim();
+          if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+        }
+        return null;
+      }
+    };
+
     // 監聽來自 GAS 內層沙盒的跨網域訊息
     window.addEventListener('message', function(e) {
       if (!e.data) return;
@@ -32,22 +54,37 @@
       // 1. 💾 保存狀態 (SAVE_STATE)
       if (e.data.type === 'SAVE_STATE') {
         localStorage.setItem(e.data.key, e.data.val);
+        CookieUtil.set(e.data.key, e.data.val, 30); // 同步存入第一方 Cookie 作為安全備份
       }
 
       // 2. 🔌 同步還原憑證 (GET_ALL_STATES)
       if (e.data.type === 'GET_ALL_STATES') {
         const states = {};
+        
+        // 先從 LocalStorage 讀取
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          states[key] = localStorage.getItem(key);
+          if (key) states[key] = localStorage.getItem(key);
         }
-        iframe.contentWindow.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
+        
+        // 💡 核心自癒機制：如果 LocalStorage 被 iOS 清空，改從第一方 Cookie 還原登入憑證
+        const keysToCheck = ['dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache'];
+        keysToCheck.forEach(key => {
+          if (!states[key] || states[key] === 'undefined') {
+            const val = CookieUtil.get(key);
+            if (val) states[key] = val;
+          }
+        });
+
+        // 💡 核心安全修正：改用 e.source.postMessage 代替 iframe.contentWindow.postMessage
+        // 解決 iOS 跨網域沙盒下，主視窗直接讀取 iframe.contentWindow 會被系統阻擋（為 null）的問題
+        if (e.source) {
+          e.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
+        }
       }
 
       // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
       if (e.data.type === 'OPEN_EXTERNAL_URL') {
-        // 💡 關鍵修正：改用虛擬 <a> 標籤 + target="_blank" 來喚醒外部 App 或地圖
-        // 這能確保桌面程式的主視窗永遠停留在 diendien.github.io 作用域內，防止系統因越界而清空登入憑證
         const link = document.createElement('a');
         link.href = e.data.url;
         link.target = '_blank';
@@ -65,6 +102,11 @@
       // 5. 🔒 安全登出
       if (e.data.type === 'LOGOUT_CLEAR') {
         localStorage.clear();
+        // 清除 Cookie 備份
+        const keysToClear = ['dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache'];
+        keysToClear.forEach(key => {
+          CookieUtil.set(key, "", -1);
+        });
       }
     });
   </script>
