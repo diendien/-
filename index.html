@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- 💡 連結 PWA 設定檔與桌面圖示 -->
+  <!-- 連結 PWA 設定檔與桌面圖示 -->
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./app-icon.png">
   <link rel="icon" type="image/png" href="./app-icon.png">
@@ -19,13 +19,13 @@
   </style>
 </head>
 <body>
-  <!-- 💡 已精準對接您專屬的正式部署網址 /exec -->
-  <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbzvcyNqPiBSOpgm6MEA69Qw50kqz0z88eg9R7nlshT5LFEkNtGIk5m1DA2p5sWIx1oe/exec" allow="geolocation; camera; microphone"></iframe>
+  <!-- 已精準對接您的正式部署網址 -->
+  <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbzvcyNqPiBSOpgm6MEA69Qw50kqz0z88eg9R7nlshT5LFEkNtGIk5m1DA2p5sWIx1oe/exec"></iframe>
 
   <script>
     const iframe = document.getElementById('gas-iframe');
 
-    // 💡 Cookie 雙重備份工具（防止 iOS ITP 清除 PWA LocalStorage）
+    // Cookie 雙重備份工具（防止 iOS ITP 清除 PWA LocalStorage）
     const CookieUtil = {
       set: function(name, value, days = 30) {
         let expires = "";
@@ -54,10 +54,10 @@
       // 1. 💾 保存狀態 (SAVE_STATE)
       if (e.data.type === 'SAVE_STATE') {
         localStorage.setItem(e.data.key, e.data.val);
-        CookieUtil.set(e.data.key, e.data.val, 30); // 同步存入第一方 Cookie 作為安全備份
+        CookieUtil.set(e.data.key, e.data.val, 30); // 同步存入 Cookie
       }
 
-      // 2. 🔌 同步還原憑證 (GET_ALL_STATES)
+      // 2. 🔌 同步還原憑證與各分頁暫存舊資料 (GET_ALL_STATES)
       if (e.data.type === 'GET_ALL_STATES') {
         const states = {};
         
@@ -67,8 +67,12 @@
           if (key) states[key] = localStorage.getItem(key);
         }
         
-        // 💡 核心自癒機制：如果 LocalStorage 被 iOS 清空，改從第一方 Cookie 還原登入憑證
-        const keysToCheck = ['dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache'];
+        // 💡 修正：將月卡單快取、日曆快取鍵值全部納入 Cookie 備份清單中，確保清空時能完美還原
+        const keysToCheck = [
+          'dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache',
+          'cached_report_thead', 'cached_report_tbody', 'cached_report_type',
+          'cached_calendar_grid_html', 'cached_calendar_title', 'cached_calendar_year', 'cached_calendar_month'
+        ];
         keysToCheck.forEach(key => {
           if (!states[key] || states[key] === 'undefined') {
             const val = CookieUtil.get(key);
@@ -76,8 +80,7 @@
           }
         });
 
-        // 💡 核心安全修正：改用 e.source.postMessage 代替 iframe.contentWindow.postMessage
-        // 解決 iOS 跨網域沙盒下，主視窗直接讀取 iframe.contentWindow 會被系統阻擋（為 null）的問題
+        // 💡 修正：改用 e.source.postMessage，解決 iOS standalone 下主視窗直接讀取 iframe.contentWindow 被阻擋為 null 的問題
         if (e.source) {
           e.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
         }
@@ -102,8 +105,11 @@
       // 5. 🔒 安全登出
       if (e.data.type === 'LOGOUT_CLEAR') {
         localStorage.clear();
-        // 清除 Cookie 備份
-        const keysToClear = ['dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache'];
+        const keysToClear = [
+          'dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache',
+          'cached_report_thead', 'cached_report_tbody', 'cached_report_type',
+          'cached_calendar_grid_html', 'cached_calendar_title', 'cached_calendar_year', 'cached_calendar_month'
+        ];
         keysToClear.forEach(key => {
           CookieUtil.set(key, "", -1);
         });
@@ -111,7 +117,7 @@
     });
   </script>
 
-  <!-- 💡 註冊 Service Worker 啟用完整的 PWA 模式 -->
+  <!-- 註冊 Service Worker 啟用完整的 PWA 模式 -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
