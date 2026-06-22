@@ -19,7 +19,50 @@
   </style>
   
   <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1fb00XZVBQ3ctXYNVaw2MFKI4Bi4b9pNd">
-  <link rel="apple-touch-startup-image" href="https://drive.google.com/uc?export=view&id=1fb00XZVBQ3ctXYNVaw2MFKI4Bi4b9pNd">
+  <!-- 💡 iOS PWA 啟動畫面動態生成引擎 -->
+  <script>
+    (function() {
+      // 偵測是否為 iOS 裝置
+      const isApple = /ipad|iphone|ipod/i.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (!isApple) return;
+
+      const iconUrl = './app-icon.png'; // 讀取 GitHub 本地圖示，完美避開跨網域 (CORS) 限制
+      const bgColor = '#080c14'; // 與您的科技極客主題一致的深灰藍底色
+
+      // 取得手機實際像素解析度
+      const w = window.screen.width * window.devicePixelRatio;
+      const h = window.screen.height * window.devicePixelRatio;
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+
+      // 1. 填滿深色背景
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, w, h);
+
+      // 2. 載入並繪製居中 Logo
+      const img = new Image();
+      img.onload = function() {
+        // 智慧計算 Logo 比例：在任何螢幕下都保持適中大小（約佔螢幕短邊的 18%）
+        const logoSize = Math.min(w, h) * 0.18; 
+        const x = (w - logoSize) / 2;
+        const y = (h - logoSize) / 2;
+        
+        ctx.drawImage(img, x, y, logoSize, logoSize);
+        
+        // 3. 轉為 Base64 並動態寫入 iOS Startup Image 標籤中
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('link');
+        link.rel = 'apple-touch-startup-image';
+        link.href = dataUrl;
+        document.head.appendChild(link);
+      };
+      img.src = iconUrl;
+    })();
+  </script>
   <meta name="apple-mobile-web-app-title" content="動工導航">
   
 </head>
