@@ -19,18 +19,16 @@
   </style>
   
   <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1fb00XZVBQ3ctXYNVaw2MFKI4Bi4b9pNd">
-  <!-- 💡 iOS PWA 啟動畫面動態生成引擎 -->
+  <!-- 💡 iOS PWA 啟動畫面動態生成引擎 (升級版：Logo 放大 + 文字 “樂清”) -->
   <script>
     (function() {
-      // 偵測是否為 iOS 裝置
       const isApple = /ipad|iphone|ipod/i.test(navigator.userAgent) || 
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       if (!isApple) return;
 
-      const iconUrl = './app-icon.png'; // 讀取 GitHub 本地圖示，完美避開跨網域 (CORS) 限制
-      const bgColor = '#080c14'; // 與您的科技極客主題一致的深灰藍底色
+      const iconUrl = './app-icon.png'; 
+      const bgColor = '#080c14'; 
 
-      // 取得手機實際像素解析度
       const w = window.screen.width * window.devicePixelRatio;
       const h = window.screen.height * window.devicePixelRatio;
       
@@ -46,14 +44,26 @@
       // 2. 載入並繪製居中 Logo
       const img = new Image();
       img.onload = function() {
-        // 智慧計算 Logo 比例：在任何螢幕下都保持適中大小（約佔螢幕短邊的 18%）
-        const logoSize = Math.min(w, h) * 0.18; 
+        // 💡 修正 1：Logo 比例從原本的 18% 調大至 45% (視覺大小放大約 3 ~ 4 倍)
+        const logoSize = Math.min(w, h) * 0.45; 
         const x = (w - logoSize) / 2;
-        const y = (h - logoSize) / 2;
+        // 將 Logo 位置稍微往上提一點，為下方的文字留出空間
+        const y = (h - logoSize) / 2 - (logoSize * 0.12); 
         
         ctx.drawImage(img, x, y, logoSize, logoSize);
         
-        // 3. 轉為 Base64 並動態寫入 iOS Startup Image 標籤中
+        // 💡 修正 2：在圖片下方建立文字 “樂清”
+        const fontSize = Math.round(logoSize * 0.16); // 根據 Logo 大小自動調整最適合的字體大小
+        ctx.font = "bold " + fontSize + "px 'Noto Sans TC', 'Microsoft JhengHei', sans-serif";
+        ctx.fillStyle = '#ffffff'; // 白色字體
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        
+        // 將文字繪製在 Logo 底部的下方 (並保持優雅的間距)
+        const textY = y + logoSize + (logoSize * 0.15);
+        ctx.fillText("樂清", w / 2, textY);
+        
+        // 3. 輸出為啟動畫面
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('link');
         link.rel = 'apple-touch-startup-image';
