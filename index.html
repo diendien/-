@@ -144,19 +144,13 @@
       }
 
       // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
-      if (e.data.type === 'OPEN_EXTERNAL_URL') {
+      if (e.data.type === 'OPEN_EXTERNAL_URL' || e.data.type === 'NAVIGATE_LINE') {
         const link = document.createElement('a');
-        window.location.href = e.data.url;
         link.href = e.data.url;
-        link.target = '_blank';
+        link.rel = 'noopener';
+        document.body.appendChild(link);
         link.click();
-      }
-      if (e.data.type === 'NAVIGATE_LINE') {
-        const link = document.createElement('a');
-        window.location.href = e.data.url;
-        link.href = e.data.url;
-        link.target = '_blank';
-        link.click();
+        document.body.removeChild(link);
       }
 
       // 5. 🔒 安全登出
