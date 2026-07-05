@@ -145,18 +145,10 @@
 
       // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
       if (e.data.type === 'OPEN_EXTERNAL_URL') {
-        const link = document.createElement('a');
-        link.href = e.data.url;
-        link.target = '_blank';
-        link.click();
+        window.location.href = e.data.url;
       }
-
-      // 4. 🚀 處理 LINE 跳轉特別管道
       if (e.data.type === 'NAVIGATE_LINE') {
-        const link = document.createElement('a');
-        link.href = e.data.url;
-        link.target = '_blank';
-        link.click();
+        window.location.href = e.data.url;
       }
 
       // 5. 🔒 安全登出
