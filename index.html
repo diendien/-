@@ -78,7 +78,7 @@
 </head>
 <body>
   <!-- 已精準對接您的正式部署網址 -->
-  <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbwY1AovnlFAonfqjr8RRq4rGEkhW6PRroDA2ETAmnkSINd16uQIwsXmE1yvZATvMTbv/exec" allow="geolocation; camera; microphone;"></iframe>
+  <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbwY1AovnlFAonfqjr8RRq4rGEkhW6PRroDA2ETAmnkSINd16uQIwsXmE1yvZATvMTbv/exec" allow="geolocation; camera; microphone; clipboard-write;"></iframe>
   <script>
     const iframe = document.getElementById('gas-iframe');
 
@@ -140,6 +140,23 @@
         // 💡 修正：改用 e.source.postMessage，解決 iOS standalone 下主視窗直接讀取 iframe.contentWindow 被阻擋為 null 的問題
         if (e.source) {
           e.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
+        }
+      }
+
+      // 🆕 複製文字＋跳轉 LINE（一起在最外層執行，繞開 iframe 沙盒 clipboard 限制）
+      if (e.data.type === 'COPY_AND_NAVIGATE_LINE') {
+        const doNav = () => {
+          const link = document.createElement('a');
+          link.href = e.data.url;
+          link.rel = 'noopener';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(e.data.text || '').then(doNav).catch(doNav);
+        } else {
+          doNav();
         }
       }
 
