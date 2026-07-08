@@ -1,4 +1,4 @@
-const CACHE_NAME = 'navigation-shell-v3'; // 💡 提高版本號，強制手機更新圖示與快取
+const CACHE_NAME = 'navigation-shell-v4'; // 💡 提高版本號，強制手機更新圖示與快取
 const ASSETS = [
   './',
   './index.html',
