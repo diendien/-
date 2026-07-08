@@ -106,6 +106,7 @@
 
     // 監聽來自 GAS 內層沙盒的跨網域訊息
     window.addEventListener('message', function(e) {
+      if (!e.origin.endsWith('.googleusercontent.com') && !e.origin.startsWith('https://script.google.com')) return;
       if (!e.data) return;
 
       // 1. 💾 保存狀態 (SAVE_STATE)
