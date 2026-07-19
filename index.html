@@ -7,62 +7,53 @@
   <title>動工單導航系統</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <!-- 連結 PWA 設定檔與桌面圖示 -->
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./app-icon.png">
   <link rel="icon" type="image/png" href="./app-icon.png">
 
   <style>
-    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#080c14; }
+    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#080c14; font-family:'Noto Sans TC',sans-serif; }
     iframe { border:none; width:100%; height:100%; display:block; }
+    #offline-view { display:none; width:100%; height:100%; overflow-y:auto; background:#080c14; color:#e2e8f0; box-sizing:border-box; padding:16px; }
+    #offline-view.show { display:block; }
+    .off-banner { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .off-retry { background:#3b82f6; color:#fff; border:none; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; flex-shrink:0 }
+    .off-card { background:#111827; border:1px solid rgba(99,120,160,.18); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+    .off-time { display:inline-block; background:rgba(59,130,246,.15); color:#93c5fd; border-radius:99px; padding:2px 8px; font-size:12px; font-weight:700; margin-bottom:6px }
+    .off-store { font-size:15px; font-weight:800; margin-bottom:4px }
+    .off-store.done { opacity:.5; text-decoration:line-through }
+    .off-line { font-size:12px; color:#94a3b8; margin-top:2px; line-height:1.5 }
+    .off-actions { display:flex; gap:8px; margin-top:8px }
+    .off-actions a { flex:1; text-align:center; background:rgba(255,255,255,.06); border:1px solid rgba(99,120,160,.18); border-radius:8px; padding:6px; font-size:12px; color:#e2e8f0; text-decoration:none }
+    #offline-empty { text-align:center; color:#64748b; font-size:13px; padding:40px 0 }
   </style>
-  
-  <!-- 💡 iOS PWA 啟動畫面動態生成引擎 (升級版：Logo 放大 + 文字 “樂清”) -->
+
   <script>
     (function() {
-      const isApple = /ipad|iphone|ipod/i.test(navigator.userAgent) || 
+      const isApple = /ipad|iphone|ipod/i.test(navigator.userAgent) ||
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       if (!isApple) return;
-
-      const iconUrl = './app-icon.png'; 
-      const bgColor = '#080c14'; 
-
+      const iconUrl = './app-icon.png';
+      const bgColor = '#080c14';
       const w = window.screen.width * window.devicePixelRatio;
       const h = window.screen.height * window.devicePixelRatio;
-      
       const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
-
-      // 1. 填滿深色背景
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, w, h);
-
-      // 2. 載入並繪製居中 Logo
+      ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h);
       const img = new Image();
       img.onload = function() {
-        // 💡 修正 1：Logo 比例從原本的 18% 調大至 45% (視覺大小放大約 3 ~ 4 倍)
-        const logoSize = Math.min(w, h) * 0.45; 
+        const logoSize = Math.min(w, h) * 0.45;
         const x = (w - logoSize) / 2;
-        // 將 Logo 位置稍微往上提一點，為下方的文字留出空間
-        const y = (h - logoSize) / 2 - (logoSize * 0.12); 
-        
+        const y = (h - logoSize) / 2 - (logoSize * 0.12);
         ctx.drawImage(img, x, y, logoSize, logoSize);
-        
-        // 💡 修正 2：在圖片下方建立文字 “樂清”
-        const fontSize = Math.round(logoSize * 0.16); // 根據 Logo 大小自動調整最適合的字體大小
+        const fontSize = Math.round(logoSize * 0.16);
         ctx.font = "bold " + fontSize + "px 'Noto Sans TC', 'Microsoft JhengHei', sans-serif";
-        ctx.fillStyle = '#ffffff'; // 白色字體
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        
-        // 將文字繪製在 Logo 底部的下方 (並保持優雅的間距)
         const textY = y + logoSize + (logoSize * 0.15);
         ctx.fillText("樂清", w / 2, textY);
-        
-        // 3. 輸出為啟動畫面
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('link');
         link.rel = 'apple-touch-startup-image';
@@ -73,15 +64,25 @@
     })();
   </script>
   <meta name="apple-mobile-web-app-title" content="動工導航">
-  
 </head>
 <body>
-  <!-- 已精準對接您的正式部署網址 -->
   <iframe id="gas-iframe" src="https://script.google.com/macros/s/AKfycbxXigWFtBW1GpLb9pcLikHzosxOK604534mR3_HO9tY1yBeXJZrQpH4vdzsNKoXzEzz/exec" allow="geolocation; camera; microphone; clipboard-write;"></iframe>
+
+  <!-- 💡 離線備援畫面：連不上系統時，改讀本機快取的資料呈現唯讀清單 -->
+  <div id="offline-view">
+    <div class="off-banner">
+      <span>⚠️ 目前無網路連線，顯示上次同步的離線資料（唯讀）</span>
+      <button class="off-retry" onclick="retryLoadSystem()">重新連線</button>
+    </div>
+    <div id="offline-list"></div>
+  </div>
+
   <script>
     const iframe = document.getElementById('gas-iframe');
+    const offlineView = document.getElementById('offline-view');
+    let hasLoadedOnce = false;
+    let iframeLoadTimer = null;
 
-    // Cookie 雙重備份工具（防止 iOS ITP 清除 PWA LocalStorage）
     const CookieUtil = {
       set: function(name, value, days = 30) {
         let expires = "";
@@ -103,28 +104,82 @@
       }
     };
 
-    // 監聽來自 GAS 內層沙盒的跨網域訊息
+    // ── 離線備援畫面渲染 ─────────────────────────
+    function renderOfflineView() {
+      let raw = localStorage.getItem('offline_tasks_cache') || CookieUtil.get('offline_tasks_cache');
+      const listEl = document.getElementById('offline-list');
+      if (!raw) { listEl.innerHTML = '<div id="offline-empty">目前尚無任何離線快取資料，請先在有網路時開啟系統一次。</div>'; return; }
+      let tasks = [];
+      try { tasks = JSON.parse(raw); } catch(e) {}
+      if (!tasks.length) { listEl.innerHTML = '<div id="offline-empty">目前尚無任何離線快取資料。</div>'; return; }
+      listEl.innerHTML = tasks.map(t => {
+        const addr = encodeURIComponent(t.address || '');
+        const tel = (t.phone || '').replace(/[^0-9]/g, '');
+        return `<div class="off-card">
+          <span class="off-time">${t.date || ''} ${t.time || ''}</span>
+          <div class="off-store${t.completed ? ' done' : ''}">${(t.store||'').replace(/</g,'&lt;')}</div>
+          <div class="off-line">📍 ${(t.address||'').replace(/</g,'&lt;')}</div>
+          ${t.name ? `<div class="off-line">👤 ${(t.name||'').replace(/\n/g,' ').replace(/</g,'&lt;')}</div>` : ''}
+          ${t.note ? `<div class="off-line">📝 ${(t.note||'').replace(/\n/g,'／').replace(/</g,'&lt;')}</div>` : ''}
+          <div class="off-actions">
+            ${addr ? `<a href="https://www.google.com/maps/search/?api=1&query=${addr}" target="_blank">導航</a>` : ''}
+            ${tel ? `<a href="tel:${tel}">撥號</a>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function showOfflineView() {
+      offlineView.classList.add('show');
+      renderOfflineView();
+    }
+    function hideOfflineView() {
+      offlineView.classList.remove('show');
+    }
+    function retryLoadSystem() {
+      hideOfflineView();
+      iframe.src = iframe.src; // 強制重新載入
+      armLoadTimeout();
+    }
+    function armLoadTimeout() {
+      clearTimeout(iframeLoadTimer);
+      iframeLoadTimer = setTimeout(() => {
+        if (!hasLoadedOnce) showOfflineView();
+      }, 7000); // 7秒內載入不出來就視為離線
+    }
+
+    iframe.addEventListener('load', () => {
+      hasLoadedOnce = true;
+      clearTimeout(iframeLoadTimer);
+      hideOfflineView();
+    });
+    iframe.addEventListener('error', () => showOfflineView());
+
+    window.addEventListener('offline', () => { hasLoadedOnce = false; showOfflineView(); });
+    window.addEventListener('online', () => { retryLoadSystem(); });
+
+    if (!navigator.onLine) {
+      showOfflineView();
+    } else {
+      armLoadTimeout();
+    }
+
+    // ── 跨視窗訊息（原本邏輯保留）─────────────────
     window.addEventListener('message', function(e) {
       if (!e.origin.endsWith('.googleusercontent.com') && !e.origin.startsWith('https://script.google.com')) return;
       if (!e.data) return;
 
-      // 1. 💾 保存狀態 (SAVE_STATE)
       if (e.data.type === 'SAVE_STATE') {
         localStorage.setItem(e.data.key, e.data.val);
-        CookieUtil.set(e.data.key, e.data.val, 30); // 同步存入 Cookie
+        CookieUtil.set(e.data.key, e.data.val, 30);
       }
 
-      // 2. 🔌 同步還原憑證與各分頁暫存舊資料 (GET_ALL_STATES)
       if (e.data.type === 'GET_ALL_STATES') {
         const states = {};
-        
-        // 先從 LocalStorage 讀取
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key) states[key] = localStorage.getItem(key);
         }
-        
-        // 💡 修正：將月卡單快取、日曆快取鍵值全部納入 Cookie 備份清單中，確保清空時能完美還原
         const keysToCheck = [
           'dispatcher_user', 'cached_dates', 'cached_people', 'cached_kw', 'cached_view', 'offline_tasks_cache',
           'cached_report_thead', 'cached_report_tbody', 'cached_report_type',
@@ -136,41 +191,26 @@
             if (val) states[key] = val;
           }
         });
-
-        // 💡 修正：改用 e.source.postMessage，解決 iOS standalone 下主視窗直接讀取 iframe.contentWindow 被阻擋為 null 的問題
-        if (e.source) {
-          e.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
-        }
+        if (e.source) e.source.postMessage({ type: 'SEND_ALL_STATES', states: states }, '*');
       }
 
-      // 🆕 複製文字＋跳轉 LINE（一起在最外層執行，繞開 iframe 沙盒 clipboard 限制）
       if (e.data.type === 'COPY_AND_NAVIGATE_LINE') {
         const doNav = () => {
           const link = document.createElement('a');
-          link.href = e.data.url;
-          link.rel = 'noopener';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          link.href = e.data.url; link.rel = 'noopener';
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(e.data.text || '').then(doNav).catch(doNav);
-        } else {
-          doNav();
-        }
+        } else { doNav(); }
       }
 
-      // 3. 🗺️ 穿透沙盒跳轉 (喚醒導航/LINE)
       if (e.data.type === 'OPEN_EXTERNAL_URL' || e.data.type === 'NAVIGATE_LINE') {
         const link = document.createElement('a');
-        link.href = e.data.url;
-        link.rel = 'noopener';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        link.href = e.data.url; link.rel = 'noopener';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
       }
 
-      // 5. 🔒 安全登出
       if (e.data.type === 'LOGOUT_CLEAR') {
         localStorage.clear();
         const keysToClear = [
@@ -178,20 +218,51 @@
           'cached_report_thead', 'cached_report_tbody', 'cached_report_type',
           'cached_calendar_grid_html', 'cached_calendar_title', 'cached_calendar_year', 'cached_calendar_month'
         ];
-        keysToClear.forEach(key => {
-          CookieUtil.set(key, "", -1);
-        });
+        keysToClear.forEach(key => CookieUtil.set(key, "", -1));
       }
     });
-  </script>
 
-  <!-- 註冊 Service Worker 啟用完整的 PWA 模式 -->
-  <script>
+    // ── 🚀 版本自動更新偵測 ─────────────────
+    (function checkVersionAndAutoUpdate() {
+      fetch('./version.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(res => res.json())
+        .then(data => {
+          const newVer = data.version;
+          const oldVer = localStorage.getItem('app_shell_version');
+          if (oldVer && oldVer !== newVer) {
+            localStorage.setItem('app_shell_version', newVer);
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister());
+              });
+            }
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).finally(() => {
+              location.reload(true);
+            });
+          } else if (!oldVer) {
+            localStorage.setItem('app_shell_version', newVer);
+          }
+        })
+        .catch(() => {}); // 離線時抓不到版本檔就略過，不影響離線畫面
+    })();
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker 註冊成功', reg))
+          .then(reg => {
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  newWorker.postMessage('SKIP_WAITING');
+                }
+              });
+            });
+          })
           .catch(err => console.log('Service Worker 註冊失敗', err));
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        location.reload();
       });
     }
   </script>
