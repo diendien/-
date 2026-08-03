@@ -1,4 +1,4 @@
-const CACHE_NAME = 'navigation-shell-v5'; // 💡 每次改殼內容記得手動+1
+const CACHE_NAME = 'navigation-shell-v6'; // 💡 每次改殼內容記得手動+1
 const ASSETS = [
   './',
   './index.html',
