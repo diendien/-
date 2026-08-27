@@ -178,10 +178,19 @@
 
       if (e.data.type === 'SHOW_NATIVE_NOTIFICATION') {
         if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(e.data.title || '動工單導航系統', {
-            body: e.data.body || '',
-            icon: './app-icon.png'
-          });
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            // 💡 優先交由 ServiceWorker 呼叫原生系統橫幅（手機鎖屏與通知中心均可正常顯示）
+            navigator.serviceWorker.controller.postMessage({
+              type: 'TRIGGER_PUSH_NOTIFICATION',
+              title: e.data.title || '動工單導航系統',
+              body: e.data.body || ''
+            });
+          } else {
+            new Notification(e.data.title || '動工單導航系統', {
+              body: e.data.body || '',
+              icon: './app-icon.png'
+            });
+          }
         }
       }
 
