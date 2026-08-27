@@ -14,13 +14,6 @@
   <style>
     body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#080c14; font-family:'Noto Sans TC',sans-serif; }
     iframe { border:none; width:100%; height:100%; display:block; }
-    // 💡 請求通知權限（放在原本 iframe 變數宣告附近）
-    if ('Notification' in window && Notification.permission === 'default') {
-      document.addEventListener('click', function requestNotifPermission() {
-        Notification.requestPermission();
-        document.removeEventListener('click', requestNotifPermission);
-      }, { once: true });
-    }
     #offline-view { display:none; width:100%; height:100%; overflow-y:auto; background:#080c14; color:#e2e8f0; box-sizing:border-box; padding:16px; }
     #offline-view.show { display:block; }
     .off-banner { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -85,6 +78,13 @@
   </div>
 
   <script>
+    // 💡 請求通知權限（已移至正確的 script 區塊內）
+    if ('Notification' in window && Notification.permission === 'default') {
+      document.addEventListener('click', function requestNotifPermission() {
+        Notification.requestPermission();
+        document.removeEventListener('click', requestNotifPermission);
+      }, { once: true });
+    }
     const iframe = document.getElementById('gas-iframe');
     const offlineView = document.getElementById('offline-view');
     let hasLoadedOnce = false;
