@@ -22,7 +22,33 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('message', (e) => {
+  if (!e.data) return;
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+  
+  // 💡 支援從網頁端直接喚醒系統級 Notification 橫幅
+  if (e.data.type === 'TRIGGER_PUSH_NOTIFICATION') {
+    const title = e.data.title || '動工單導航系統';
+    const options = {
+      body: e.data.body || '',
+      icon: './app-icon.png',
+      badge: './app-icon.png',
+      vibrate: [100, 50, 100],
+      data: { url: './index.html' }
+    };
+    self.registration.showNotification(title, options);
+  }
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes('index.html') && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./index.html');
+    })
+  );
 });
 
 self.addEventListener('fetch', (e) => {
