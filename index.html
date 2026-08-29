@@ -87,6 +87,10 @@
     }
     const iframe = document.getElementById('gas-iframe');
     const offlineView = document.getElementById('offline-view');
+    // 💡 確保外層網址參數（如 ?action=arrive_shortcut）100% 帶入內層 iframe
+    if (window.location.search) {
+      iframe.src = iframe.src.split('?')[0] + window.location.search;
+    }
     let hasLoadedOnce = false;
     let iframeLoadTimer = null;
 
@@ -234,6 +238,11 @@
         const link = document.createElement('a');
         link.href = e.data.url; link.rel = 'noopener';
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      }
+      // 💡 監聽內層指令，由最外層頂層視窗直接啟動 iOS 捷徑
+      if (e.data && e.data.type === 'TRIGGER_IOS_SHORTCUT') {
+        const shortcutUrl = 'shortcuts://run-shortcut?name=' + encodeURIComponent(e.data.name || '通知抵達') + '&input=' + encodeURIComponent(e.data.input || '');
+        window.location.href = shortcutUrl;
       }
 
       if (e.data.type === 'LOGOUT_CLEAR') {
