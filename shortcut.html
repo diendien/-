@@ -10,21 +10,12 @@
       const input = params.get('input') || '';
       const shortcutUrl = 'shortcuts://run-shortcut?name=' + encodeURIComponent(name) + '&input=' + encodeURIComponent(input);
       
-      // 0.05 秒立即喚醒 iOS 捷徑
-      window.location.href = shortcutUrl;
-      
-      // 喚醒後自動退回背景
-      setTimeout(function() {
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.close();
-        }
-      }, 800);
+      // 0.01 秒直接喚醒 iOS「通知抵達」捷徑
+      window.location.replace(shortcutUrl);
     };
   </script>
 </head>
 <body style="background:#080c14;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
-  <p style="font-size:14px;color:#94a3b8;">正在為您啟動 iOS「通知抵達」自動化捷徑…</p>
+  <p style="font-size:14px;color:#94a3b8;">正在為您啟動 iOS 自動化捷徑…</p>
 </body>
 </html>
