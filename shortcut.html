@@ -3,45 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>啟動捷徑中...</title>
+  <title>處理中...</title>
+  <style>
+    body {
+      background: #080c14;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .icon { font-size: 40px; margin-bottom: 8px; }
+    .title { font-size: 16px; font-weight: bold; color: #60a5fa; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #94a3b8; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="icon" class="icon">📋</div>
+    <div id="title" class="title">正在複製文字…</div>
+    <div id="sub" class="sub">已自動為您複製到剪貼簿</div>
+  </div>
+
   <script>
     window.onload = function() {
       const params = new URLSearchParams(window.location.search);
-      const name = params.get('name') || '通知抵達';
-      const input = params.get('input') || '';
+      const action = params.get('action') || 'arrive';
+      const textToCopy = params.get('text') || params.get('input') || '';
       const store = params.get('store') || '';
       const row = params.get('row') || '';
       const date = params.get('date') || '';
-      
-      const shortcutUrl = 'shortcuts://run-shortcut?name=' + encodeURIComponent(name) + '&input=' + encodeURIComponent(input);
 
-      // 1. 背景向 GAS 發送抵達寫入請求（確保第 14 欄同步寫入）
-      if (store && row) {
-        const gasUrl = 'https://script.google.com/macros/s/AKfycbwHR7oJjw8yej7Dc44VaDsvrrSNc1aRpZIDkrOJ6WwaC17qZdDWaRcTUVNJGljdKFMp/exec';
-        fetch(gasUrl + '?action=arrive_shortcut&store=' + encodeURIComponent(store) + '&date=' + encodeURIComponent(date) + '&row=' + encodeURIComponent(row), { mode: 'no-cors' }).catch(function(){});
+      // 1. 執行純文字剪貼簿複製
+      if (textToCopy) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textToCopy).catch(function(){});
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = textToCopy;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
       }
 
-      // 2. 模擬原生點擊通道，極速啟動 iOS 捷徑
-      const link = document.createElement('a');
-      link.href = shortcutUrl;
-      link.rel = 'noopener';
-      document.body.appendChild(link);
-      link.click();
+      // 2. 如果是抵達報備：在背景向 GAS 發送寫入試算表第 14 欄請求
+      if (action === 'arrive' && store && row) {
+        document.getElementById('icon').textContent = '🏁';
+        document.getElementById('title').textContent = '抵達打卡已同步！';
+        document.getElementById('sub').textContent = '已記錄至第 14 欄，文字已複製！';
 
-      // 3. 0.6 秒自動關閉或返回
+        const gasUrl = 'https://script.google.com/macros/s/AKfycbwHR7oJjw8yej7Dc44VaDsvrrSNc1aRpZIDkrOJ6WwaC17qZdDWaRcTUVNJGljdKFMp/exec';
+        fetch(gasUrl + '?action=arrive_shortcut&store=' + encodeURIComponent(store) + '&date=' + encodeURIComponent(date) + '&row=' + encodeURIComponent(row), { mode: 'no-cors' }).catch(function(){});
+
+        // 嘗試喚醒 iOS 捷徑（有設定捷徑的使用者自動啟動）
+        setTimeout(function() {
+          const shortcutUrl = 'shortcuts://run-shortcut?name=' + encodeURIComponent('通知抵達') + '&input=' + encodeURIComponent(textToCopy);
+          window.location.href = shortcutUrl;
+        }, 150);
+      } else {
+        // 群組相簿：純複製
+        document.getElementById('icon').textContent = '📋';
+        document.getElementById('title').textContent = '相簿名稱已複製！';
+        document.getElementById('sub').textContent = '可直接至群組貼上建立相簿';
+      }
+
+      // 3. 0.4 秒後自動返回 LINE 聊天室
       setTimeout(function() {
         if (window.history.length > 1) {
           window.history.back();
         } else {
-          window.close();
+          window.location.href = 'line://nv/chat';
         }
-      }, 600);
+      }, 400);
     };
   </script>
-</head>
-<body style="background:#080c14;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-  <div style="font-size:32px;margin-bottom:12px;">🏁</div>
-  <p style="font-size:15px;font-weight:bold;color:#60a5fa;margin:0;">正在啟動 iOS「通知抵達」捷徑…</p>
-  <p style="font-size:12px;color:#94a3b8;margin-top:6px;">已同步記錄試算表第 14 欄</p>
 </body>
 </html>
